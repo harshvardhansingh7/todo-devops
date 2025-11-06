@@ -3,9 +3,9 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/harshvardhansingh7/todo-devops'
-            }
+              steps {
+                git url: 'https://github.com/harshvardhansingh7/todo-devops.git', branch: 'main'
+              }
         }
 
         stage('Build with Maven') {
