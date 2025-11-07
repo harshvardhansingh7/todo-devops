@@ -41,7 +41,6 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // No kubeconfig needed if cluster is accessible
                 sh """
                     # Replace the image in deployment YAML
                     sed -i 's|image: .*|image: ${IMAGE_NAME}|' ${DEPLOYMENT_YAML}

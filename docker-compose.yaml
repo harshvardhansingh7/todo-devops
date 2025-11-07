@@ -35,6 +35,7 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${USERPROFILE}/.kube:/root/.kube   # <-- add this line on Windows
     restart: always
 
 volumes:
