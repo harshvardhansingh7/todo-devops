@@ -3,10 +3,9 @@ pipeline {
 
     environment {
         APP_NAME = 'todo-app'
-        IMAGE_NAME = "harshvardhansingh7/todo-app:${env.BUILD_NUMBER}" // full Docker Hub image path
+        IMAGE_NAME = "harshvardhansingh7/todo-app:${env.BUILD_NUMBER}" // Docker Hub image path
         KUBE_NAMESPACE = 'default' // Kubernetes namespace
-        DEPLOYMENT_YAML = 'todo-deployment.yaml'  // root folder
-        SERVICE_YAML = 'todo-app-service.yaml'        // root folder
+        DEPLOYMENT_YAML = 'todo-deployment.yaml'  // deployment + service in one file
     }
 
     stages {
@@ -46,11 +45,10 @@ pipeline {
                     # Update deployment YAML with new image
                     sed -i 's|image: .*|image: ${IMAGE_NAME}|' ${DEPLOYMENT_YAML}
 
-                    # Apply deployment and service
+                    # Apply deployment + service (both are in the same YAML file)
                     kubectl apply -f ${DEPLOYMENT_YAML} -n ${KUBE_NAMESPACE}
-                    kubectl apply -f ${SERVICE_YAML} -n ${KUBE_NAMESPACE}
 
-                    # Optional: wait for rollout
+                    # Wait for rollout to complete
                     kubectl rollout status deployment/${APP_NAME} -n ${KUBE_NAMESPACE}
                 """
             }
