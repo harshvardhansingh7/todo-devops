@@ -5,7 +5,7 @@ pipeline {
         APP_NAME = 'todo-app'
         IMAGE_NAME = "harshvardhansingh7/todo-app:${env.BUILD_NUMBER}" // full Docker Hub image path
         KUBE_NAMESPACE = 'default' // Kubernetes namespace
-        DEPLOYMENT_YAML = 'todo-app-deployment.yaml'  // root folder
+        DEPLOYMENT_YAML = 'todo-deployment.yaml'  // root folder
         SERVICE_YAML = 'todo-app-service.yaml'        // root folder
     }
 
