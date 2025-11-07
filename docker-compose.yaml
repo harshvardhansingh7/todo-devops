@@ -25,5 +25,18 @@ services:
       - "8081:8080"
     restart: always
 
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins_container
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+
 volumes:
   mysql_data:
+  jenkins_home:
