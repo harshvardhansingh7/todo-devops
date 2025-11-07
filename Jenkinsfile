@@ -41,16 +41,14 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh """
-                    # Update deployment YAML with new image
-                    sed -i 's|image: .*|image: ${IMAGE_NAME}|' ${DEPLOYMENT_YAML}
-
-                    # Apply deployment + service (both are in the same YAML file)
-                    kubectl apply -f ${DEPLOYMENT_YAML} -n ${KUBE_NAMESPACE}
-
-                    # Wait for rollout to complete
-                    kubectl rollout status deployment/${APP_NAME} -n ${KUBE_NAMESPACE}
-                """
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    sh """
+                export KUBECONFIG=$KUBECONFIG_FILE
+                sed -i 's|image: .*|image: ${IMAGE_NAME}|' ${DEPLOYMENT_YAML}
+                kubectl apply -f ${DEPLOYMENT_YAML} -n ${KUBE_NAMESPACE}
+                kubectl rollout status deployment/${APP_NAME} -n ${KUBE_NAMESPACE}
+            """
+                }
             }
         }
     }
