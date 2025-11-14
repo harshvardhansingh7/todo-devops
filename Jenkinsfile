@@ -44,15 +44,14 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // Ensure kubectl uses proper PATH and cluster context
-                withEnv(["PATH+KUBECTL=/usr/local/bin"]) {
-                    sh '''
-                        echo "Deploying ${IMAGE_NAME} to Kubernetes..."
-                        kubectl apply -f k8s/ --validate=false
-                        kubectl set image deployment/todo-app todo-app=${IMAGE_NAME} || true
-                        kubectl rollout status deployment/todo-app
-                    '''
-                }
+                // Set KUBECONFIG and skip TLS verification
+                sh '''
+            export KUBECONFIG=/root/.kube/config
+            echo "Deploying ${IMAGE_NAME} to Kubernetes..."
+            kubectl --insecure-skip-tls-verify apply -f k8s/ --validate=false
+            kubectl --insecure-skip-tls-verify set image deployment/todo-app todo-app=${IMAGE_NAME} || true
+            kubectl --insecure-skip-tls-verify rollout status deployment/todo-app
+        '''
             }
         }
     }
