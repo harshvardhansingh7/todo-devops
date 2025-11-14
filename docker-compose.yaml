@@ -18,7 +18,9 @@ services:
       - mysql_data:/var/lib/mysql
 
   todo-app:
-    build: ./todo-app
+    build:
+      context: .
+      dockerfile: todo-app/Dockerfile
     container_name: todo_app_container
     depends_on:
       mysql:

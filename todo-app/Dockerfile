@@ -2,7 +2,7 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Copy compiled jar
+# Copy jar from root context
 COPY target/todo-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
