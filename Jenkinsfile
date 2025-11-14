@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'maven'          // MATCHES your Jenkins Tools config
+        dockerTool 'docker'    // optional
+    }
+
     environment {
         APP_NAME = 'todo-app'
         IMAGE_NAME = "harshvardhansingh7/todo-app:${env.BUILD_NUMBER}"
@@ -18,6 +23,7 @@ pipeline {
 
         stage('Build Maven Project') {
             steps {
+                sh 'mvn -version'
                 sh 'mvn clean package -DskipTests'
             }
         }
