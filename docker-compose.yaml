@@ -18,9 +18,7 @@ services:
       - mysql_data:/var/lib/mysql
 
   todo-app:
-    build:
-      context: .
-      dockerfile: todo-app/Dockerfile
+    build: .
     container_name: todo_app_container
     depends_on:
       mysql:
@@ -34,7 +32,9 @@ services:
     restart: always
 
   jenkins:
-    build: ./jenkins
+    build:
+      context: ./jenkins           # Correct context for Jenkins Dockerfile
+      dockerfile: Dockerfile
     container_name: jenkins_container
     user: root
     ports:
