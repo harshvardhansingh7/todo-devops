@@ -2,15 +2,13 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven'          // MATCHES your Jenkins Tools config
-        dockerTool 'docker'    // optional
+        maven 'maven'
+        dockerTool 'docker'
     }
 
     environment {
         APP_NAME = 'todo-app'
         IMAGE_NAME = "harshvardhansingh7/todo-app:${env.BUILD_NUMBER}"
-        DEPLOYMENT_YAML = 'todo-deployment.yaml'
-        KUBE_NAMESPACE = 'default'
     }
 
     stages {
@@ -23,7 +21,6 @@ pipeline {
 
         stage('Build Maven Project') {
             steps {
-                sh 'mvn -version'
                 sh 'mvn clean package -DskipTests'
             }
         }
@@ -38,10 +35,20 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh """
-                docker login -u "$USER" -p "$PASS"
-                docker push ${IMAGE_NAME}
-            """
+                       echo "$PASS" | docker login -u "$USER" --password-stdin
+                       docker push ${IMAGE_NAME}
+                    """
                 }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    kubectl set image deployment/todo-app todo-app=${IMAGE_NAME} --record || true
+                    kubectl apply -f k8s/
+                    kubectl rollout status deployment/todo-app
+                '''
             }
         }
     }
