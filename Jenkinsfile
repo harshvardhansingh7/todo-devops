@@ -35,20 +35,24 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh """
-                docker login -u "$USER" -p "$PASS"
-                docker push ${IMAGE_NAME}
-            """
+                        docker login -u "$USER" -p "$PASS"
+                        docker push ${IMAGE_NAME}
+                    """
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                    kubectl set image deployment/todo-app todo-app=${IMAGE_NAME} --record || true
-                    kubectl apply -f k8s/
-                    kubectl rollout status deployment/todo-app
-                '''
+                // Ensure kubectl uses proper PATH and cluster context
+                withEnv(["PATH+KUBECTL=/usr/local/bin"]) {
+                    sh '''
+                        echo "Deploying ${IMAGE_NAME} to Kubernetes..."
+                        kubectl apply -f k8s/ --validate=false
+                        kubectl set image deployment/todo-app todo-app=${IMAGE_NAME} || true
+                        kubectl rollout status deployment/todo-app
+                    '''
+                }
             }
         }
     }

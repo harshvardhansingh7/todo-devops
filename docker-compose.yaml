@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   mysql:
-    image: mysql:8-oraclelinux8   # smaller base image
+    image: mysql:8-oraclelinux8
     container_name: mysql_container
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -18,7 +18,7 @@ services:
       - mysql_data:/var/lib/mysql
 
   todo-app:
-    build: .
+    build: ./todo-app
     container_name: todo_app_container
     depends_on:
       mysql:
@@ -32,7 +32,7 @@ services:
     restart: always
 
   jenkins:
-    image: jenkins/jenkins:lts-jdk17   # lighter + includes Java 17
+    build: ./jenkins
     container_name: jenkins_container
     user: root
     ports:
@@ -41,7 +41,7 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      - C:/Users/hp-d/.kube:/root/.kube  # for kubectl (Windows only)
+      - C:/Users/hp-d/.kube:/root/.kube
     restart: always
 
 volumes:
