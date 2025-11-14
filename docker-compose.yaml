@@ -2,13 +2,18 @@ version: "3.8"
 
 services:
   mysql:
-    image: mysql:8
+    image: mysql:8-oraclelinux8   # smaller base image
     container_name: mysql_container
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: todo_db
     ports:
       - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -16,7 +21,8 @@ services:
     build: .
     container_name: todo_app_container
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/todo_db
       SPRING_DATASOURCE_USERNAME: root
@@ -26,16 +32,16 @@ services:
     restart: always
 
   jenkins:
-    image: jenkins/jenkins:lts
+    image: jenkins/jenkins:lts-jdk17   # lighter + includes Java 17
     container_name: jenkins_container
     user: root
     ports:
-      - "8080:8080"
+      - "9090:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${USERPROFILE}/.kube:/root/.kube   # <-- add this line on Windows
+      - ${USERPROFILE}/.kube:/root/.kube   # for kubectl (Windows only)
     restart: always
 
 volumes:

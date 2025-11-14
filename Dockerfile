@@ -1,14 +1,14 @@
-# Step 1: Use official OpenJDK 17 base image
-FROM eclipse-temurin:17-jdk
+# Step 1: Lightweight Java runtime
+FROM eclipse-temurin:17-jre-alpine
 
-# Step 2: Set working directory
+# Step 2: Working directory
 WORKDIR /app
 
-# Step 3: Copy JAR file
+# Step 3: Copy jar (make sure mvn package creates this)
 COPY target/todo-0.0.1-SNAPSHOT.jar app.jar
 
-# Step 4: Expose app port
+# Step 4: Expose port
 EXPOSE 8080
 
-# Step 5: Run app
+# Step 5: Run application
 ENTRYPOINT ["java", "-jar", "app.jar"]

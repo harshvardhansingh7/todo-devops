@@ -38,20 +38,5 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh """
-                    # Replace the image in deployment YAML
-                    sed -i 's|image: .*|image: ${IMAGE_NAME}|' ${DEPLOYMENT_YAML}
-
-                    # Apply deployment & service
-                    kubectl apply -f ${DEPLOYMENT_YAML} -n ${KUBE_NAMESPACE}
-
-                    # Wait for rollout
-                    kubectl rollout status deployment/${APP_NAME} -n ${KUBE_NAMESPACE}
-                """
-            }
-        }
     }
 }
