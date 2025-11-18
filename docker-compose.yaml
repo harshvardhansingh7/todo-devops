@@ -44,6 +44,7 @@ services:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - C:/Users/hp-d/.kube:/root/.kube
+      - C:/Users/hp-d/.minikube:/root/.minikube
     restart: always
 
 volumes:
