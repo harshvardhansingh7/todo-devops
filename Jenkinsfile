@@ -28,9 +28,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME} .
-                """
+                sh "docker build -t ${IMAGE_NAME} ."
             }
         }
 
@@ -53,16 +51,13 @@ pipeline {
                         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
                         install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
                     fi
-                    
-                    # Update kubeconfig to use host.docker.internal
-                    kubectl config set-cluster docker-desktop --server=https://host.docker.internal:6443 --insecure-skip-tls-verify=true
-                    kubectl config set-context docker-desktop --cluster=docker-desktop --user=docker-desktop
-                    kubectl config use-context docker-desktop
-                    
-                    # Verify connection
+
+                    # Use the mounted kubeconfig
+                    export KUBECONFIG=/root/.kube/config
+
                     echo "Testing Kubernetes connection..."
-                    kubectl cluster-info || true
-                    kubectl get nodes || true
+                    kubectl cluster-info
+                    kubectl get nodes
                 '''
             }
         }
@@ -70,22 +65,18 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
+                    export KUBECONFIG=/root/.kube/config
                     echo "Deploying to Docker Desktop Kubernetes..."
+
                     # Apply MySQL first
                     kubectl apply -f k8s/mysql.yaml
-                    
-                    # Wait for MySQL to be ready
                     kubectl wait --for=condition=ready pod -l app=mysql --timeout=300s
-                    
+
                     # Apply application deployment
                     kubectl apply -f k8s/
-                    
-                    # Update image
                     kubectl set image deployment/todo-app todo-app=${IMAGE_NAME}
-                    
-                    # Wait for rollout
                     kubectl rollout status deployment/todo-app --timeout=300s
-                    
+
                     echo "Deployment completed successfully!"
                 """
             }
@@ -95,6 +86,7 @@ pipeline {
     post {
         always {
             sh '''
+                export KUBECONFIG=/root/.kube/config
                 echo "Cleaning up..."
                 kubectl get pods -o wide
                 kubectl get services
