@@ -46,21 +46,29 @@ pipeline {
         stage('Setup Kubernetes Access') {
             steps {
                 sh '''
-                    # Install kubectl if not present
-                    if ! command -v kubectl &> /dev/null; then
-                        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                        install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-                    fi
+            # Install kubectl if not present
+            if ! command -v kubectl &> /dev/null; then
+                curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+            fi
 
-                    # Use the mounted kubeconfig
-                    export KUBECONFIG=/root/.kube/config
+            # Point to host.docker.internal and skip TLS verification
+            kubectl config set-cluster docker-desktop \
+                --server=https://host.docker.internal:6443 \
+                --insecure-skip-tls-verify=true
+            kubectl config set-context docker-desktop --cluster=docker-desktop --user=docker-desktop
+            kubectl config use-context docker-desktop
 
-                    echo "Testing Kubernetes connection..."
-                    kubectl cluster-info
-                    kubectl get nodes
-                '''
+            # Export KUBECONFIG
+            export KUBECONFIG=/root/.kube/config
+
+            echo "Testing Kubernetes connection..."
+            kubectl cluster-info
+            kubectl get nodes
+        '''
             }
         }
+
 
         stage('Deploy to Kubernetes') {
             steps {
