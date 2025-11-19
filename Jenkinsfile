@@ -10,7 +10,7 @@ pipeline {
         APP_NAME = 'todo-app'
         IMAGE_NAME = "harshvardhansingh7/todo-app:${env.BUILD_NUMBER}"
         DOCKER_HOST = "unix:///var/run/docker.sock"
-        # We will set KUBECONFIG dynamically to a temp copy inside steps
+
     }
 
     stages {
