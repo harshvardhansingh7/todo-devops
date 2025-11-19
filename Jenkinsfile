@@ -9,6 +9,7 @@ pipeline {
     environment {
         APP_NAME = 'todo-app'
         IMAGE_NAME = "harshvardhansingh7/todo-app:${env.BUILD_NUMBER}"
+        KUBECONFIG  = "/root/.kube/config"
     }
 
     stages {
@@ -44,14 +45,12 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // Set KUBECONFIG and skip TLS verification
-                sh '''
-            export KUBECONFIG=/root/.kube/config
-            echo "Deploying ${IMAGE_NAME} to Kubernetes..."
-            kubectl --insecure-skip-tls-verify apply -f k8s/ --validate=false
-            kubectl --insecure-skip-tls-verify set image deployment/todo-app todo-app=${IMAGE_NAME} || true
-            kubectl --insecure-skip-tls-verify rollout status deployment/todo-app
-        '''
+                sh """
+                    echo "Deploying to Docker Desktop Kubernetes..."
+                    kubectl apply -f k8s/
+                    kubectl set image deployment/todo-app todo-app=${IMAGE_NAME}
+                    kubectl rollout status deployment/todo-app
+                """
             }
         }
     }
