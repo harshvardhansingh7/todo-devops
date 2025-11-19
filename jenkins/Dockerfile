@@ -1,25 +1,30 @@
-FROM jenkins/jenkins:lts-jdk17
+FROM jenkins/jenkins:lts
 
 USER root
-WORKDIR /tmp
 
-# Install prerequisites, kubectl and Docker CLI (stable)
-RUN apt-get update \
-  && apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https unzip git \
-  && curl -fsSLo /usr/local/bin/kubectl "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl" \
-  && chmod +x /usr/local/bin/kubectl \
-  # Install docker (cli) from distro package (docker.io) - ok for CI usage
-  && apt-get install -y docker.io \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/*
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    lsb-release \
+    apt-transport-https \
+    ca-certificates \
+    software-properties-common
 
-# (Optional) Verify versions at build time (helpful in logs)
-RUN kubectl version --client --short || true \
-  && docker --version || true \
-  && git --version || true
+# Install Docker
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list && \
+    apt-get update && apt-get install -y docker-ce-cli
 
-# Return to the jenkins user (the container will run as root per docker-compose, but leaving Jenkins user set is fine)
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Add Jenkins to docker group (use GID from host if needed, typically 999)
+RUN groupadd -g 999 docker || true
+RUN usermod -aG docker jenkins
+
 USER jenkins
-WORKDIR /var/jenkins_home
 
-# keep default Jenkins image entrypoint/cmd
+# Install suggested plugins
+RUN jenkins-plugin-cli --plugins git docker-workflow pipeline-utility-steps kubernetes
