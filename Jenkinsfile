@@ -43,35 +43,45 @@ pipeline {
             }
         }
 
-        stage('Setup Kubernetes Access') {
+        stage('Fix KIND kubeconfig') {
             steps {
                 sh '''
-                    # Install kubectl if not present
+                    # Make sure kubectl exists
                     if ! command -v kubectl &> /dev/null; then
                         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
                         install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
                     fi
 
-                    # Use existing kubeconfig
+                    echo "Rewriting kubeconfig for KIND inside Docker..."
+
+                    # Replace localhost endpoints (127.0.0.1) with kind-control-plane
+                    sed -i 's/127.0.0.1:[0-9]*/kind-control-plane:6443/g' /root/.kube/config
+                '''
+            }
+        }
+
+        stage('Test Kubernetes Access') {
+            steps {
+                sh '''
                     export KUBECONFIG=/root/.kube/config
-                    echo "Testing Kubernetes connection..."
+                    echo "Checking connection to KIND cluster..."
                     kubectl cluster-info
                     kubectl get nodes
                 '''
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to KIND') {
             steps {
                 sh '''
                     export KUBECONFIG=/root/.kube/config
-                    echo "Deploying to Docker Desktop Kubernetes..."
+                    echo "Deploying to KIND..."
 
                     # Apply MySQL first
                     kubectl apply -f k8s/mysql.yaml
                     kubectl wait --for=condition=ready pod -l app=mysql --timeout=300s
 
-                    # Apply application deployment
+                    # Apply app manifests
                     kubectl apply -f k8s/
                     kubectl set image deployment/todo-app todo-app=${IMAGE_NAME}
                     kubectl rollout status deployment/todo-app --timeout=300s
@@ -86,16 +96,9 @@ pipeline {
         always {
             sh '''
                 export KUBECONFIG=/root/.kube/config
-                echo "Cleaning up..."
                 kubectl get pods -o wide
-                kubectl get services
+                kubectl get svc
             '''
-        }
-        success {
-            sh 'echo "Pipeline executed successfully!"'
-        }
-        failure {
-            sh 'echo "Pipeline failed!"'
         }
     }
 }
