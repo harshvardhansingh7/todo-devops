@@ -48,7 +48,7 @@ services:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       # Mount kubeconfig from Windows → Linux path
-      - /c/Users/hp-d/.kube/config:/root/.kube/config:ro
+      - /c/Users/hp-d/.kube/config:/root/.kube/config
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - KUBECONFIG=/root/.kube/config

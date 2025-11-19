@@ -49,23 +49,23 @@ pipeline {
         stage('Fix Kubeconfig') {
             steps {
                 sh '''
-                    if [ ! -f /root/.kube/config ]; then
-                        echo "MISSING kubeconfig"
-                        exit 1
-                    fi
+            if [ ! -f /root/.kube/config ]; then
+              echo "MISSING kubeconfig"
+              exit 1
+            fi
 
-                    cp /root/.kube/config ${FIXED_KUBECONFIG}
-                    chmod 600 ${FIXED_KUBECONFIG}
+            cp /root/.kube/config ${FIXED_KUBECONFIG}
+            chmod 600 ${FIXED_KUBECONFIG}
 
-                    CLUSTER=$(/usr/local/bin/kubectl --kubeconfig=${FIXED_KUBECONFIG} config get-clusters | head -n 1)
+            # Replace localhost with KIND control-plane
+            sed -i 's/https:\\/\\/localhost:6443/https:\\/\\/kind-control-plane:6443/g' ${FIXED_KUBECONFIG}
+            sed -i 's/https:\\/\\/127.0.0.1:6443/https:\\/\\/kind-control-plane:6443/g' ${FIXED_KUBECONFIG}
 
-                    /usr/local/bin/kubectl --kubeconfig=${FIXED_KUBECONFIG} config set-cluster "$CLUSTER" \
-                        --server="${KIND_API_SERVER}" --insecure-skip-tls-verify=true
-
-                    echo "export KUBECONFIG=${FIXED_KUBECONFIG}" > ${KUBEENV_FILE}
-                '''
+            echo "export KUBECONFIG=${FIXED_KUBECONFIG}" > /tmp/kubeenv
+        '''
             }
         }
+
 
         stage('Test Kubernetes Access') {
             steps {
