@@ -47,15 +47,14 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      # <-- Mount the kubeconfig file directly (replace path with your Windows user/kube path)
+      # Mount kubeconfig from Windows → Linux path
       - /c/Users/hp-d/.kube/config:/root/.kube/config:ro
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
-      # optional: explicitly tell processes inside container where the kubeconfig is mounted
       - KUBECONFIG=/root/.kube/config
     networks:
       - default
-      - kind    # attach to the kind network (external)
+      - kind
 
 volumes:
   mysql_data:
@@ -64,6 +63,5 @@ volumes:
 networks:
   default:
     driver: bridge
-
   kind:
     external: true

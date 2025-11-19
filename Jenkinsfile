@@ -12,6 +12,7 @@ pipeline {
         DOCKER_HOST = "unix:///var/run/docker.sock"
         FIXED_KUBECONFIG = "/tmp/kubeconfig.kind"
         KIND_API_SERVER = "https://kind-control-plane:6443"
+        KUBEENV_FILE = "/tmp/kubeenv"
     }
 
     stages {
@@ -49,19 +50,19 @@ pipeline {
             steps {
                 sh '''
                     if [ ! -f /root/.kube/config ]; then
-                      echo "MISSING kubeconfig"
-                      exit 1
+                        echo "MISSING kubeconfig"
+                        exit 1
                     fi
 
                     cp /root/.kube/config ${FIXED_KUBECONFIG}
                     chmod 600 ${FIXED_KUBECONFIG}
 
-                    # Force API server hostname for Jenkins container
                     CLUSTER=$(/usr/local/bin/kubectl --kubeconfig=${FIXED_KUBECONFIG} config get-clusters | head -n 1)
+
                     /usr/local/bin/kubectl --kubeconfig=${FIXED_KUBECONFIG} config set-cluster "$CLUSTER" \
                         --server="${KIND_API_SERVER}" --insecure-skip-tls-verify=true
 
-                    echo "export KUBECONFIG=${FIXED_KUBECONFIG}" > /tmp/kubeenv
+                    echo "export KUBECONFIG=${FIXED_KUBECONFIG}" > ${KUBEENV_FILE}
                 '''
             }
         }
@@ -69,7 +70,7 @@ pipeline {
         stage('Test Kubernetes Access') {
             steps {
                 sh '''
-                    source /tmp/kubeenv
+                    . ${KUBEENV_FILE}
                     kubectl cluster-info
                     kubectl get nodes
                 '''
@@ -79,7 +80,7 @@ pipeline {
         stage('Deploy to KIND') {
             steps {
                 sh '''
-                    source /tmp/kubeenv
+                    . ${KUBEENV_FILE}
 
                     kubectl apply -f k8s/mysql.yaml
                     kubectl wait --for=condition=ready pod -l app=mysql --timeout=300s || true
@@ -95,7 +96,7 @@ pipeline {
     post {
         always {
             sh '''
-                source /tmp/kubeenv || true
+                . ${KUBEENV_FILE} || true
                 kubectl get pods -o wide || true
                 kubectl get svc || true
             '''
